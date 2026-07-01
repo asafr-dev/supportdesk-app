@@ -1,0 +1,11 @@
+[build]
+builder = "RAILPACK"
+watchPatterns = ["src/**", "prisma/**", "scripts/**", "package*.json", "railway.toml", ".npmrc", ".nvmrc", "next.config.*", "demoEnv.mjs", "postcss.config.*", "tailwind.config.*", "tsconfig.json"]
+
+[deploy]
+# Run migrations on each deploy, then start Next.
+# Use a shell so $PORT expands.
+startCommand = "sh -c 'npm run db:setup && npm run start -- -H 0.0.0.0 -p $PORT'"
+healthcheckPath = "/"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
