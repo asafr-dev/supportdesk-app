@@ -1,0 +1,69 @@
+{
+  "name": "supportdesk-app",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "pretypecheck": "node scripts/ensure-prisma-client.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:local": "docker compose up -d && playwright test",
+    "format": "prettier --write . --ignore-unknown --print-width 100 --trailing-comma none --end-of-line lf --prose-wrap preserve",
+    "format:check": "prettier --check . --ignore-unknown --print-width 100 --trailing-comma none --end-of-line lf --prose-wrap preserve",
+    "check": "npm run -s format:check && npm run -s lint && npm run -s typecheck --if-present && npm run -s test --if-present",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset --force",
+    "prisma:generate": "prisma generate",
+    "db:wait": "tsx scripts/wait-for-db.ts",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:setup": "npm run db:wait && npm run db:reset",
+    "setup": "docker compose up -d --wait && npm run db:setup",
+    "postinstall": "prisma generate",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=html --coverage.reporter=clover --coverage.reporter=json --coverage.reporter=lcov"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "next": "^15.5.18",
+    "prisma": "^5.22.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tsx": "^4.19.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^20.19.42",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "ajv": "^8.20.0",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^15.5.19",
+    "postcss": "8.5.15",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.8"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@10.9.2",
+  "overrides": {
+    "postcss": "8.5.15"
+  }
+}
