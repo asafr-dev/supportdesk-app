@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "DB: migrate",
+      "type": "shell",
+      "command": "npm run db:migrate"
+    },
+    {
+      "label": "DB: seed (DEMO — wipes data)",
+      "type": "shell",
+      "command": "npm run db:seed"
+    },
+    {
+      "label": "Dev: run (Next.js)",
+      "type": "shell",
+      "command": "npm run dev -- -H :: -p 3000"
+    },
+    {
+      "label": "DB: setup (reset+reseed)",
+      "type": "shell",
+      "command": "npm run db:setup"
+    },
+    {
+      "label": "Test: unit",
+      "type": "shell",
+      "command": "npm run test:unit"
+    }
+  ]
+}

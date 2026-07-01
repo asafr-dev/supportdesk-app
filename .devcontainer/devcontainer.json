@@ -1,0 +1,21 @@
+{
+  "name": "supportdesk-app",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/supportdesk-app",
+  "shutdownAction": "stopCompose",
+  "runServices": ["db", "app"],
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "SupportDesk App (Next.js)"
+    }
+  },
+  "postCreateCommand": "npm ci",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  },
+  "overrideCommand": false
+}
