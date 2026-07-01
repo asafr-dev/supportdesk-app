@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum TicketStatus {
+  OPEN        @map("open")
+  IN_PROGRESS @map("in_progress")
+  RESOLVED    @map("resolved")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  role         Role     @default(USER)
+
+  sessions         Session[]
+  ticketsRequested Ticket[] @relation("TicketRequester")
+  ticketsAssigned  Ticket[] @relation("TicketAssignee")
+  comments         Comment[]
+  auditLogs        AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Ticket {
+  id          Int          @id @default(autoincrement())
+  title       String       @db.VarChar(200)
+  description String       @default("") @db.Text
+  status      TicketStatus @default(OPEN)
+
+  requesterId String
+  requester   User         @relation("TicketRequester", fields: [requesterId], references: [id])
+
+  assigneeId String?
+  assignee   User?         @relation("TicketAssignee", fields: [assigneeId], references: [id])
+
+  comments  Comment[]
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, updatedAt])
+  @@index([requesterId])
+  @@index([assigneeId])
+}
+
+model Comment {
+  id       Int      @id @default(autoincrement())
+  ticketId Int
+  authorId String
+  body     String   @db.Text
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([authorId])
+}
+
+model AuditLog {
+  id       Int      @id @default(autoincrement())
+  ticketId Int
+  actorId  String
+  action   String   @db.VarChar(100)
+  meta     Json?
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor  User   @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([actorId, createdAt])
+}
