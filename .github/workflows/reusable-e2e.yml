@@ -1,0 +1,90 @@
+name: e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      concurrency_group:
+        description: Optional override for the concurrency group
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      concurrency_group:
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Concurrency at job-level: avoids workflow-level inputs edge-cases while preserving
+    # original behavior (this workflow only has one job).
+    concurrency:
+      group: ${{ inputs.concurrency_group || format('e2e-{0}', github.ref) }}
+      cancel-in-progress: true
+    env:
+      # Keep CI fast; local .env.example is copied below.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: supportdesk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d supportdesk"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Pin npm + registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Avoid npm CLI flakiness across runner images
+          npm i -g npm@10.9.2
+          npm config set registry https://registry.npmjs.org/
+          npm --version
+
+      - name: Prepare env
+        run: cp .env.example .env
+
+      - name: Install deps (retry)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmd=(npm ci)
+
+          for attempt in 1 2 3; do
+            echo "Running: ${cmd[*]} (attempt ${attempt}/3)"
+            if "${cmd[@]}"; then
+              exit 0
+            fi
+            if [ ${attempt} -lt 3 ]; then
+              sleep_time=$((attempt * 7))
+              echo "Install failed; retrying in ${sleep_time}s..."
+              sleep ${sleep_time}
+            fi
+          done
+
+          echo "Install failed after retries."
+          exit 1
+
+      - name: Install Playwright (Chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke e2e
+        run: npm run test:e2e

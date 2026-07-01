@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pipeline:
+    permissions:
+      contents: read
+      id-token: write
+    uses: asafr-dev/reusable-workflows/.github/workflows/reusable-node.yml@v1
+    with:
+      node_version: 20
+      working_directory: .
+      run_lint: true
+      run_format: true
+      run_test: true
+      test_cmd: npm run -s test:coverage
+      enable_codecov: true
+      codecov_files: ./coverage/lcov.info
+      codecov_flags: unittests
+      run_typecheck: true
+      run_build: true
+
+  e2e:
+    needs: pipeline
+    uses: ./.github/workflows/reusable-e2e.yml
+    with:
+      concurrency_group: ci-e2e-${{ github.ref }}
+    secrets: inherit
+
+  ci:
+    if: ${{ always() }}
+    needs:
+      - pipeline
+      - e2e
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate required check
+        run: |
+          echo "pipeline: ${{ needs.pipeline.result }}"
+          echo "e2e: ${{ needs.e2e.result }}"
+          if [[ "${{ needs.pipeline.result }}" != "success" ]] || [[ "${{ needs.e2e.result }}" != "success" ]]; then
+            exit 1
+          fi
