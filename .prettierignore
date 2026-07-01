@@ -1,0 +1,17 @@
+# Build + deps
+node_modules
+dist
+build
+.next
+out
+coverage
+storybook-static
+
+# Generated
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Misc
+*.min.js
+*.min.css
